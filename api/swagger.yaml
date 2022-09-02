@@ -1,0 +1,171 @@
+openapi: 3.0.0
+info:
+  title: Blog API
+  description: This is a blog API
+  contact:
+    email: dzenancindrak@gmail.com
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  version: 1.0.0
+servers:
+- url: /
+tags:
+- name: posts
+  description: everything related to posts
+- name: health-check
+  description: everything related to health-check
+paths:
+  /:
+    get:
+      tags:
+      - healthCheck
+      summary: Health check
+      description: |
+        This requests is for health check purpose.
+      operationId: healthCheck
+      responses:
+        "200":
+          description: server is alive
+        "500":
+          description: server id dead
+  /posts:
+    get:
+      tags:
+      - posts
+      summary: Get all posts
+      description: |
+        This requests get all the posts from the db.
+      operationId: getPosts
+      responses:
+        "200":
+          description: all the posts in a json array
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Post'
+                x-content-type: application/json
+        "400":
+          description: bad input parameter
+    post:
+      tags:
+      - posts
+      summary: Add a post
+      description: Adds a post
+      operationId: addPost
+      requestBody:
+        description: Post to add in json format
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Post'
+      responses:
+        "201":
+          description: post created
+        "400":
+          description: "invalid input, object invalid"
+        "409":
+          description: an existing post already exists
+  /posts/{postId}:
+    get:
+      tags:
+      - posts
+      summary: Get a post by ID
+      operationId: getPost
+      parameters:
+      - name: postId
+        in: path
+        description: ID of the post to get
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Post found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+        "404":
+          description: Post does not exist
+    delete:
+      tags:
+      - posts
+      summary: Delete a post by ID
+      operationId: deletePost
+      parameters:
+      - name: postId
+        in: path
+        description: ID of the post to delete
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Post deleted
+        "404":
+          description: Post does not exist
+    patch:
+      tags:
+      - posts
+      summary: Update a post by ID
+      operationId: updatePost
+      parameters:
+      - name: postId
+        in: path
+        description: ID of the post to update
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Post deleted
+        "404":
+          description: Post does not exist
+components:
+  schemas:
+    Post:
+      required:
+      - author
+      - content
+      - date
+      - header
+      - id
+      - userId
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: d290f1ee-6c54-4b01-90e6-d701748f0851
+        userId:
+          type: string
+          example: dzenan
+        header:
+          type: string
+          example: How to create a VM on Azure
+        content:
+          type: string
+          example: Lorem ipsum
+        author:
+          type: string
+          example: Dzenan Cindrak
+        date:
+          type: string
+          format: date-time
+          example: 2016-08-29T09:12:33.001Z
+      example:
+        date: 2016-08-29T09:12:33.001Z
+        author: Dzenan Cindrak
+        header: How to create a VM on Azure
+        id: d290f1ee-6c54-4b01-90e6-d701748f0851
+        userId: dzenan
+        content: Lorem ipsum
