@@ -16,7 +16,9 @@ import (
 	"fmt"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"path"
 )
@@ -104,6 +106,12 @@ func GetPost(w http.ResponseWriter, r *http.Request, ctx *context.Context) {
 
 		data, err := json.Marshal(resPost)
 
+		if err != nil {
+
+			panic(err)
+
+		}
+
 		write, err := w.Write(data)
 
 		if err != nil {
@@ -119,11 +127,75 @@ func GetPost(w http.ResponseWriter, r *http.Request, ctx *context.Context) {
 }
 
 func GetPosts(w http.ResponseWriter, r *http.Request, ctx *context.Context) {
+
+	var posts []Post
+
+	db := (*ctx).Value("db").(*mongo.Database)
+
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+
+	opts := options.Find().SetSort(bson.D{{"dateUpdated", 1}})
+
+	cur, err := db.Collection(CollectionName).Find(context.Background(), bson.D{{}}, opts)
+
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		log.Fatal(err)
+	}
+
+	for cur.Next(context.TODO()) {
+		var post Post
+		err := cur.Decode(&post)
+		if err != nil {
+			log.Fatal(err)
+		}
+		posts = append(posts, post)
+
+	}
+
+	data, err := json.Marshal(posts)
+
+	if err != nil {
+		panic(err)
+	}
+
 	w.WriteHeader(http.StatusOK)
+
+	write, err := w.Write(data)
+
+	if err != nil {
+		fmt.Println(write)
+		panic(err)
+
+	}
+
 }
 
 func UpdatePost(w http.ResponseWriter, r *http.Request, ctx *context.Context) {
+
+	var newPost Post
+
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	w.WriteHeader(http.StatusOK)
+
+	db := (*ctx).Value("db").(*mongo.Database)
+
+	b, err := ioutil.ReadAll(r.Body)
+
+	if err != nil {
+		panic(err)
+	}
+
+	if err = json.Unmarshal(b, &newPost); err != nil {
+		panic(err)
+	}
+
+	updateCount, err := db.Collection(CollectionName).UpdateByID(context.Background(), bson.D{{"_id", newPost.Id}}, newPost)
+
+	if err != nil {
+		log.Fatal(err)
+	} else if updateCount.MatchedCount == 0 {
+		w.WriteHeader(http.StatusNotFound)
+	} else {
+		w.WriteHeader(http.StatusOK)
+	}
 }

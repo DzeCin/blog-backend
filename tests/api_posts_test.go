@@ -1,12 +1,12 @@
 package blogBackendTests
 
 import (
-	sw "blog-backend/go"
 	"bytes"
 	"context"
 	"encoding/json"
+	sw "github.com/DzeCin/blog-backend/go"
 	"github.com/joho/godotenv"
-	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/bson"
 	"log"
 	"net/http"
 	"net/http/httptest"
@@ -15,8 +15,7 @@ import (
 )
 
 var (
-	client *mongo.Database
-	ctx    context.Context
+	ctx context.Context
 )
 
 var newPost = sw.Post{
@@ -56,6 +55,8 @@ func TestMain(m *testing.M) {
 
 	client := sw.NewDatabaseCLI(username, password, databaseHost, databaseName)
 
+	client.Collection("posts").DeleteMany(context.Background(), bson.D{{}})
+
 	ctx = context.Background()
 
 	ctx = context.WithValue(ctx, key, client)
@@ -84,7 +85,7 @@ func TestHealthCheckHandler(t *testing.T) {
 
 }
 
-func TestAddPostHandler(t *testing.T) {
+func TestAddPostHandlerPostNotExists(t *testing.T) {
 
 	rawData, err := json.Marshal(newPost)
 
@@ -106,6 +107,34 @@ func TestAddPostHandler(t *testing.T) {
 	handler.ServeHTTP(rr, req)
 
 	if status := rr.Code; status != http.StatusOK {
+		t.Errorf("handler returned wrong status code: got %v want %v",
+			status, http.StatusOK)
+	}
+
+}
+
+func TestAddPostHandlerPostExists(t *testing.T) {
+
+	rawData, err := json.Marshal(newPost)
+
+	if err != nil {
+		panic(err)
+	}
+
+	body := bytes.NewReader(rawData)
+
+	req, err := http.NewRequest("POST", "posts", body)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	rr := httptest.NewRecorder()
+
+	handler := http.HandlerFunc(sw.ContextHandler(sw.AddPost, &ctx))
+
+	handler.ServeHTTP(rr, req)
+
+	if status := rr.Code; status != http.StatusConflict {
 		t.Errorf("handler returned wrong status code: got %v want %v",
 			status, http.StatusOK)
 	}
