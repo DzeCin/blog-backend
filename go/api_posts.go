@@ -14,11 +14,16 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"path"
+	"time"
 )
 
 const CollectionName = "posts"
@@ -41,16 +46,24 @@ func AddPost(w http.ResponseWriter, r *http.Request, ctx *context.Context) {
 		panic(err)
 	}
 
-	_, err = db.Collection(CollectionName).InsertOne(context.Background(), newPost)
+	newPost.DateCreated = time.Now().String()
 
-	if mongo.IsDuplicateKeyError(err) {
-		w.WriteHeader(http.StatusConflict)
-	} else if err != nil {
-		panic(err)
+	newPost.DateUpdated = time.Now().String()
+
+	if _, err := uuid.Parse(newPost.Id); err != nil || newPost.Id == "" || newPost.Tags == nil || newPost.Header == "" || newPost.Content == "" || newPost.Author == "" {
+		w.WriteHeader(http.StatusBadRequest)
+
 	} else {
-		w.WriteHeader(http.StatusOK)
-	}
+		_, err = db.Collection(CollectionName).InsertOne(context.Background(), newPost)
 
+		if mongo.IsDuplicateKeyError(err) {
+			w.WriteHeader(http.StatusConflict)
+		} else if err != nil {
+			panic(err)
+		} else {
+			w.WriteHeader(http.StatusOK)
+		}
+	}
 }
 
 func DeletePost(w http.ResponseWriter, r *http.Request, ctx *context.Context) {
@@ -60,7 +73,7 @@ func DeletePost(w http.ResponseWriter, r *http.Request, ctx *context.Context) {
 
 	id := path.Base(r.URL.Path)
 
-	deletedCount, err := db.Collection(CollectionName).DeleteOne(context.Background(), bson.D{{"_id", id}})
+	deletedCount, err := db.Collection(CollectionName).DeleteOne(context.Background(), bson.D{primitive.E{Key: "_id", Value: id}})
 
 	if err != nil {
 
@@ -88,7 +101,7 @@ func GetPost(w http.ResponseWriter, r *http.Request, ctx *context.Context) {
 
 	id := path.Base(r.RequestURI)
 
-	err := db.Collection(CollectionName).FindOne(context.Background(), bson.D{{"_id", id}}).Decode(&resPost)
+	err := db.Collection(CollectionName).FindOne(context.Background(), bson.D{primitive.E{Key: "_id", Value: id}}).Decode(&resPost)
 
 	if err == mongo.ErrNoDocuments {
 
@@ -103,6 +116,12 @@ func GetPost(w http.ResponseWriter, r *http.Request, ctx *context.Context) {
 	} else {
 
 		data, err := json.Marshal(resPost)
+
+		if err != nil {
+
+			panic(err)
+
+		}
 
 		write, err := w.Write(data)
 
@@ -119,11 +138,79 @@ func GetPost(w http.ResponseWriter, r *http.Request, ctx *context.Context) {
 }
 
 func GetPosts(w http.ResponseWriter, r *http.Request, ctx *context.Context) {
+
+	var posts []Post
+
+	db := (*ctx).Value("db").(*mongo.Database)
+
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+
+	opts := options.Find().SetSort(bson.D{primitive.E{Key: "dateUpdated", Value: 1}})
+
+	cur, err := db.Collection(CollectionName).Find(context.Background(), bson.D{{}}, opts)
+
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		log.Fatal(err)
+	}
+
+	for cur.Next(context.TODO()) {
+		var post Post
+		err := cur.Decode(&post)
+		if err != nil {
+			log.Fatal(err)
+		}
+		posts = append(posts, post)
+
+	}
+
+	data, err := json.Marshal(posts)
+
+	if err != nil {
+		panic(err)
+	}
+
 	w.WriteHeader(http.StatusOK)
+
+	write, err := w.Write(data)
+
+	if err != nil {
+		fmt.Println(write)
+		panic(err)
+
+	}
+
 }
 
 func UpdatePost(w http.ResponseWriter, r *http.Request, ctx *context.Context) {
+
+	var newPost Post
+
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	w.WriteHeader(http.StatusOK)
+
+	db := (*ctx).Value("db").(*mongo.Database)
+
+	b, err := ioutil.ReadAll(r.Body)
+
+	if err != nil {
+		panic(err)
+	}
+
+	if err = json.Unmarshal(b, &newPost); err != nil {
+		panic(err)
+	}
+
+	if _, err := uuid.Parse(newPost.Id); err != nil || newPost.Id == "" || newPost.Tags == nil || newPost.Header == "" || newPost.Content == "" || newPost.Author == "" || newPost.Id != path.Base(r.URL.Path) {
+		w.WriteHeader(http.StatusBadRequest)
+	} else {
+		newPost.DateUpdated = time.Now().String()
+		updateCount, err := db.Collection(CollectionName).UpdateOne(context.Background(), bson.D{primitive.E{Key: "_id", Value: newPost.Id}}, bson.M{"$set": newPost})
+		if err != nil {
+			log.Fatal(err)
+		} else if updateCount.MatchedCount == 0 {
+			w.WriteHeader(http.StatusNotFound)
+		} else {
+			w.WriteHeader(http.StatusOK)
+		}
+	}
 }

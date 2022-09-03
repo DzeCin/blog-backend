@@ -21,6 +21,7 @@ type Route struct {
 	Name           string
 	Method         string
 	Pattern        string
+	EnabledAuth    bool
 	ctxHandlerFunc ctxHandler
 }
 
@@ -59,6 +60,7 @@ var routes = Routes{
 		"HealthCheck",
 		strings.ToUpper("Get"),
 		"/",
+		false,
 		HealthCheck,
 	},
 
@@ -66,6 +68,7 @@ var routes = Routes{
 		"AddPost",
 		strings.ToUpper("Post"),
 		"/posts",
+		false,
 		AddPost,
 	},
 
@@ -73,6 +76,7 @@ var routes = Routes{
 		"DeletePost",
 		strings.ToUpper("Delete"),
 		"/posts/{postId}",
+		false,
 		DeletePost,
 	},
 
@@ -80,6 +84,7 @@ var routes = Routes{
 		"GetPost",
 		strings.ToUpper("Get"),
 		"/posts/{postId}",
+		false,
 		GetPost,
 	},
 
@@ -87,6 +92,7 @@ var routes = Routes{
 		"GetPosts",
 		strings.ToUpper("Get"),
 		"/posts",
+		false,
 		GetPosts,
 	},
 
@@ -94,6 +100,7 @@ var routes = Routes{
 		"UpdatePost",
 		strings.ToUpper("Patch"),
 		"/posts/{postId}",
+		false,
 		UpdatePost,
 	},
 }

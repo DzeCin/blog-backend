@@ -49,7 +49,7 @@ func main() {
 
 	log.Printf("Server started")
 
-	key := "db"
+	DBkey := "db"
 
 	// create db client
 
@@ -59,7 +59,7 @@ func main() {
 
 	ctx = context.Background()
 
-	ctx = context.WithValue(ctx, key, client)
+	ctx = context.WithValue(ctx, DBkey, client)
 
 	router := sw.NewRouter(&ctx)
 

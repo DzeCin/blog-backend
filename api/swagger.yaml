@@ -9,17 +9,17 @@ info:
     url: http://www.apache.org/licenses/LICENSE-2.0.html
   version: 1.0.0
 servers:
-- url: /
+  - url: /
 tags:
-- name: posts
-  description: everything related to posts
-- name: health-check
-  description: everything related to health-check
+  - name: posts
+    description: everything related to posts
+  - name: healthCheck
+    description: everything related to health-check
 paths:
   /:
     get:
       tags:
-      - healthCheck
+        - healthCheck
       summary: Health check
       description: |
         This requests is for health check purpose.
@@ -32,7 +32,7 @@ paths:
   /posts:
     get:
       tags:
-      - posts
+        - posts
       summary: Get all posts
       description: |
         This requests get all the posts from the db.
@@ -51,7 +51,7 @@ paths:
           description: bad input parameter
     post:
       tags:
-      - posts
+        - posts
       summary: Add a post
       description: Adds a post
       operationId: addPost
@@ -68,21 +68,23 @@ paths:
           description: "invalid input, object invalid"
         "409":
           description: an existing post already exists
+      security:
+        - BearerAuth: []
   /posts/{postId}:
     get:
       tags:
-      - posts
+        - posts
       summary: Get a post by ID
       operationId: getPost
       parameters:
-      - name: postId
-        in: path
-        description: ID of the post to get
-        required: true
-        style: simple
-        explode: false
-        schema:
-          type: string
+        - name: postId
+          in: path
+          description: ID of the post to get
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
       responses:
         "200":
           description: Post found
@@ -94,18 +96,18 @@ paths:
           description: Post does not exist
     delete:
       tags:
-      - posts
+        - posts
       summary: Delete a post by ID
       operationId: deletePost
       parameters:
-      - name: postId
-        in: path
-        description: ID of the post to delete
-        required: true
-        style: simple
-        explode: false
-        schema:
-          type: string
+        - name: postId
+          in: path
+          description: ID of the post to delete
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
       responses:
         "200":
           description: Post deleted
@@ -113,18 +115,24 @@ paths:
           description: Post does not exist
     patch:
       tags:
-      - posts
+        - posts
       summary: Update a post by ID
       operationId: updatePost
       parameters:
-      - name: postId
-        in: path
-        description: ID of the post to update
-        required: true
-        style: simple
-        explode: false
-        schema:
-          type: string
+        - name: postId
+          in: path
+          description: ID of the post to update
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+      requestBody:
+        description: Post to modify in json format
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Post'
       responses:
         "200":
           description: Post deleted
@@ -134,21 +142,28 @@ components:
   schemas:
     Post:
       required:
-      - author
-      - content
-      - date
-      - header
-      - id
-      - userId
+        - author
+        - content
+        - dateCreated
+        - dateUpdated
+        - header
+        - id
+        - tags
       type: object
       properties:
         id:
           type: string
           format: uuid
           example: d290f1ee-6c54-4b01-90e6-d701748f0851
-        userId:
-          type: string
-          example: dzenan
+        tags:
+          maxItems: 10
+          minItems: 1
+          type: array
+          example:
+            - devops
+            - kubernetes
+          items:
+            type: string
         header:
           type: string
           example: How to create a VM on Azure
@@ -158,14 +173,25 @@ components:
         author:
           type: string
           example: Dzenan Cindrak
-        date:
+        dateCreated:
+          type: string
+          format: date-time
+          example: 2016-08-29T09:12:33.001Z
+        dateUpdated:
           type: string
           format: date-time
           example: 2016-08-29T09:12:33.001Z
       example:
-        date: 2016-08-29T09:12:33.001Z
+        dateCreated: 2016-08-29T09:12:33.001Z
         author: Dzenan Cindrak
         header: How to create a VM on Azure
         id: d290f1ee-6c54-4b01-90e6-d701748f0851
-        userId: dzenan
         content: Lorem ipsum
+        tags:
+          - devops
+          - kubernetes
+        dateUpdated: 2016-08-29T09:12:33.001Z
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
