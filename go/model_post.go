@@ -13,6 +13,8 @@ package blog
 type Post struct {
 	Id string `json:"id" bson:"_id"`
 
+	Title string `json:"title" bson:"title"`
+
 	Tags []string `json:"tags" bson:"tags"`
 
 	Header string `json:"header" bson:"header"`

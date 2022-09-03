@@ -23,6 +23,7 @@ var (
 
 var newPost = sw.Post{
 	Id:          "5066a748-9a72-404d-94f7-512c0779ff8e",
+	Title:       "How to setup",
 	Tags:        []string{"devops", "python", "golang"},
 	Header:      "This is a blog about",
 	Content:     "Does it work ?",
@@ -33,6 +34,7 @@ var newPost = sw.Post{
 
 var newBadPost = sw.Post{
 	Id:          "badUID",
+	Title:       "How to setup",
 	Tags:        []string{"devops", "python", "golang"},
 	Header:      "This is a blog about",
 	Content:     "Does it work ?",
@@ -43,6 +45,7 @@ var newBadPost = sw.Post{
 
 var updatedPost = sw.Post{
 	Id:          newPost.Id,
+	Title:       "How to setup",
 	Tags:        []string{"tag3", "tag4"},
 	Header:      "Edited header",
 	Content:     "Edited content",
@@ -53,6 +56,7 @@ var updatedPost = sw.Post{
 
 var updatedBadPost = sw.Post{
 	Id:          newPost.Id,
+	Title:       "How to setup",
 	Tags:        []string{"tag3", "tag4"},
 	Header:      "",
 	Content:     "Edited content",
@@ -70,6 +74,7 @@ func postGenerator(number int) []interface{} {
 
 		var post = sw.Post{
 			Id:          faker.RandomUUID().String(),
+			Title:       faker.RandomJobTitle(),
 			Tags:        []string{faker.RandomCatchPhraseAdjective(), faker.RandomCatchPhraseAdjective(), faker.RandomCatchPhraseAdjective()},
 			Header:      faker.RandomLoremSentence(),
 			Content:     faker.RandomLoremText(),

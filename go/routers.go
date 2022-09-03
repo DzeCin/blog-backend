@@ -19,7 +19,7 @@ import (
 
 type Route struct {
 	Name           string
-	Method         string
+	Methods        []string
 	Pattern        string
 	EnabledAuth    bool
 	ctxHandlerFunc ctxHandler
@@ -46,7 +46,7 @@ func NewRouter(ctx *context.Context) *mux.Router {
 		handler = Logger(handler, route.Name)
 
 		router.
-			Methods(route.Method).
+			Methods(route.Methods...).
 			Path(route.Pattern).
 			Name(route.Name).
 			Handler(handler)
@@ -58,7 +58,7 @@ func NewRouter(ctx *context.Context) *mux.Router {
 var routes = Routes{
 	Route{
 		"HealthCheck",
-		strings.ToUpper("Get"),
+		[]string{strings.ToUpper("Get"), strings.ToUpper("Options")},
 		"/",
 		false,
 		HealthCheck,
@@ -66,7 +66,7 @@ var routes = Routes{
 
 	Route{
 		"AddPost",
-		strings.ToUpper("Post"),
+		[]string{strings.ToUpper("Post")},
 		"/posts",
 		false,
 		AddPost,
@@ -74,7 +74,7 @@ var routes = Routes{
 
 	Route{
 		"DeletePost",
-		strings.ToUpper("Delete"),
+		[]string{strings.ToUpper("Delete")},
 		"/posts/{postId}",
 		false,
 		DeletePost,
@@ -82,7 +82,7 @@ var routes = Routes{
 
 	Route{
 		"GetPost",
-		strings.ToUpper("Get"),
+		[]string{strings.ToUpper("Get"), strings.ToUpper("Options")},
 		"/posts/{postId}",
 		false,
 		GetPost,
@@ -90,7 +90,7 @@ var routes = Routes{
 
 	Route{
 		"GetPosts",
-		strings.ToUpper("Get"),
+		[]string{strings.ToUpper("Get"), strings.ToUpper("Options")},
 		"/posts",
 		false,
 		GetPosts,
@@ -98,7 +98,7 @@ var routes = Routes{
 
 	Route{
 		"UpdatePost",
-		strings.ToUpper("Patch"),
+		[]string{strings.ToUpper("Patch")},
 		"/posts/{postId}",
 		false,
 		UpdatePost,

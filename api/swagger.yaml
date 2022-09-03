@@ -9,7 +9,10 @@ info:
     url: http://www.apache.org/licenses/LICENSE-2.0.html
   version: 1.0.0
 servers:
-  - url: /
+  - url: "{server}/v1"
+    variables:
+      server:
+        default: https://blog-api.cindrak.com
 tags:
   - name: posts
     description: everything related to posts
@@ -128,7 +131,7 @@ paths:
           schema:
             type: string
       requestBody:
-        description: Post to modify in json format
+        description: Post to modify in
         content:
           application/json:
             schema:
@@ -149,12 +152,16 @@ components:
         - header
         - id
         - tags
+        - title
       type: object
       properties:
         id:
           type: string
           format: uuid
           example: d290f1ee-6c54-4b01-90e6-d701748f0851
+        title:
+          type: string
+          example: How to setup kubernetes
         tags:
           maxItems: 10
           minItems: 1
@@ -186,6 +193,7 @@ components:
         author: Dzenan Cindrak
         header: How to create a VM on Azure
         id: d290f1ee-6c54-4b01-90e6-d701748f0851
+        title: How to setup kubernetes
         content: Lorem ipsum
         tags:
           - devops
