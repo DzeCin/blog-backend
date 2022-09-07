@@ -1,11 +1,11 @@
-package blogBackendTests
+package BlogBackendTests
 
 import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"github.com/DzeCin/blog-backend/faker"
 	sw "github.com/DzeCin/blog-backend/go"
-	faker2 "github.com/ddosify/go-faker/faker"
 	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/bson"
 	"log"
@@ -15,7 +15,7 @@ import (
 	"testing"
 )
 
-const nbPosts = 1500
+const nbPosts = 10
 
 var (
 	ctx context.Context
@@ -65,37 +65,6 @@ var updatedBadPost = sw.Post{
 	DateUpdated: "2023-05-31T22:58:40.653Z",
 }
 
-func postGenerator(number int) []interface{} {
-	faker := faker2.NewFaker()
-
-	var posts []interface{}
-
-	for i := 0; i < number; i++ {
-
-		var post = sw.Post{
-			Id:          faker.RandomUUID().String(),
-			Title:       faker.RandomJobTitle(),
-			Tags:        []string{faker.RandomCatchPhraseAdjective(), faker.RandomCatchPhraseAdjective(), faker.RandomCatchPhraseAdjective()},
-			Header:      faker.RandomLoremSentence(),
-			Content:     faker.RandomLoremText(),
-			Author:      faker.RandomPersonFullName(),
-			DateCreated: faker.RandomDatePast(),
-			DateUpdated: faker.RandomDateFuture(),
-		}
-
-		toBson, err := bson.Marshal(post)
-		if err != nil {
-			panic(err)
-		}
-
-		posts = append(posts, toBson)
-
-	}
-
-	return posts
-
-}
-
 func TestMain(m *testing.M) {
 
 	log.Printf("Setting testing context")
@@ -126,7 +95,7 @@ func TestMain(m *testing.M) {
 
 	client.Collection("posts").DeleteMany(context.Background(), bson.D{{}})
 
-	_, err = client.Collection("posts").InsertMany(context.Background(), postGenerator(nbPosts))
+	_, err = client.Collection("posts").InsertMany(context.Background(), BlogBackendFaker.PostGenerator(nbPosts))
 
 	ctx = context.Background()
 
@@ -134,7 +103,7 @@ func TestMain(m *testing.M) {
 
 	code := m.Run()
 
-	client.Collection("posts").DeleteMany(context.Background(), bson.D{{}})
+	//client.Collection("posts").DeleteMany(context.Background(), bson.D{{}})
 
 	os.Exit(code)
 
