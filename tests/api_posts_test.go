@@ -186,6 +186,36 @@ func TestAddPostHandlerPostNotExists(t *testing.T) {
 
 }
 
+// Test with no auth token
+
+func TestAddPostHandlerPostUnauthorizedNoAuthToken(t *testing.T) {
+
+	rawData, err := json.Marshal(newPost)
+
+	if err != nil {
+		panic(err)
+	}
+
+	body := bytes.NewReader(rawData)
+
+	req, err := http.NewRequest("POST", "posts", body)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	rr := httptest.NewRecorder()
+
+	handler := http.HandlerFunc(sw.HandleAuthorization(sw.AddPost, &ctx))
+
+	handler.ServeHTTP(rr, req)
+
+	if status := rr.Code; status != http.StatusUnauthorized {
+		t.Errorf("handler returned wrong status code: got %v want %v",
+			status, http.StatusOK)
+	}
+
+}
+
 func TestAddPostHandlerPostBadID(t *testing.T) {
 
 	rawData, err := json.Marshal(newBadPost)

@@ -29,12 +29,13 @@ import (
 
 const CollectionName = "posts"
 
-func corsHeaders(w *http.ResponseWriter) {
-
-	(*w).Header().Set("Access-Control-Allow-Origin", "*")
-	(*w).Header().Set("Access-Control-Allow-Headers", "*")
-
-}
+//func corsHeaders(w *http.ResponseWriter) {
+//
+//	(*w).Header().Set("Access-Control-Allow-Origin", "*")
+//	(*w).Header().Set("Access-Control-Allow-Headers", "*")
+//	(*w).Header().Set("Access-Control-Allow-Methods", "*")
+//
+//}
 
 func AddPost(w http.ResponseWriter, r *http.Request, ctx *context.Context) {
 
@@ -47,11 +48,11 @@ func AddPost(w http.ResponseWriter, r *http.Request, ctx *context.Context) {
 	b, err := ioutil.ReadAll(r.Body)
 
 	if err != nil {
-		panic(err)
+		w.WriteHeader(http.StatusBadRequest)
 	}
 
 	if err = json.Unmarshal(b, &newPost); err != nil {
-		panic(err)
+		w.WriteHeader(http.StatusBadRequest)
 	}
 
 	newPost.DateCreated = time.Now().String()
@@ -67,7 +68,7 @@ func AddPost(w http.ResponseWriter, r *http.Request, ctx *context.Context) {
 		if mongo.IsDuplicateKeyError(err) {
 			w.WriteHeader(http.StatusConflict)
 		} else if err != nil {
-			panic(err)
+			w.WriteHeader(http.StatusBadRequest)
 		} else {
 			w.WriteHeader(http.StatusOK)
 		}
@@ -75,6 +76,7 @@ func AddPost(w http.ResponseWriter, r *http.Request, ctx *context.Context) {
 }
 
 func DeletePost(w http.ResponseWriter, r *http.Request, ctx *context.Context) {
+
 	db := (*ctx).Value("db").(*mongo.Database)
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
@@ -86,8 +88,6 @@ func DeletePost(w http.ResponseWriter, r *http.Request, ctx *context.Context) {
 	if err != nil {
 
 		w.WriteHeader(http.StatusInternalServerError)
-
-		panic(err)
 
 	} else if deletedCount.DeletedCount == 0 {
 
@@ -101,8 +101,6 @@ func DeletePost(w http.ResponseWriter, r *http.Request, ctx *context.Context) {
 
 func GetPost(w http.ResponseWriter, r *http.Request, ctx *context.Context) {
 
-	corsHeaders(&w)
-
 	switch r.Method {
 
 	case http.MethodOptions:
@@ -112,7 +110,6 @@ func GetPost(w http.ResponseWriter, r *http.Request, ctx *context.Context) {
 	case http.MethodGet:
 
 		var resPost Post
-
 		db := (*ctx).Value("db").(*mongo.Database)
 
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
@@ -157,8 +154,6 @@ func GetPost(w http.ResponseWriter, r *http.Request, ctx *context.Context) {
 }
 
 func GetPosts(w http.ResponseWriter, r *http.Request, ctx *context.Context) {
-
-	corsHeaders(&w)
 
 	switch r.Method {
 

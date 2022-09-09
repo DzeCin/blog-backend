@@ -11,6 +11,7 @@ package blog
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -31,7 +32,40 @@ type ctxHandler func(w http.ResponseWriter, r *http.Request, ctx *context.Contex
 
 func ContextHandler(handler ctxHandler, ctx *context.Context) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
+		corsHeaders(&w)
 		handler(w, r, ctx)
+	}
+}
+
+func corsHeaders(w *http.ResponseWriter) {
+
+	(*w).Header().Set("Access-Control-Allow-Origin", "*")
+	(*w).Header().Set("Access-Control-Allow-Headers", "*")
+	(*w).Header().Set("Access-Control-Allow-Methods", "*")
+
+}
+
+func HandleAuthorization(handler ctxHandler, ctx *context.Context) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		corsHeaders(&w)
+
+		var claims *Claims
+		var isAllowed bool
+
+		claims = GetUserClaims(r.Header.Get("Authorization"))
+
+		for _, elmt := range (*claims).Roles {
+			if elmt == "0362b96d-a505-4462-a040-2b7ca87c6f81" {
+				isAllowed = true
+				fmt.Println("IsAllowed")
+			}
+		}
+
+		if isAllowed {
+			handler(w, r, ctx)
+		} else {
+			w.WriteHeader(http.StatusUnauthorized)
+		}
 	}
 }
 
@@ -42,7 +76,12 @@ func NewRouter(ctx *context.Context) *mux.Router {
 		var contHandler ctxHandler
 		var handler http.Handler
 		contHandler = route.ctxHandlerFunc
-		handler = http.HandlerFunc(ContextHandler(contHandler, ctx))
+		if route.EnabledAuth {
+			handler = http.HandlerFunc(HandleAuthorization(contHandler, ctx))
+		} else {
+			handler = http.HandlerFunc(ContextHandler(contHandler, ctx))
+		}
+
 		handler = Logger(handler, route.Name)
 
 		router.
@@ -68,7 +107,7 @@ var routes = Routes{
 		"AddPost",
 		[]string{strings.ToUpper("Post")},
 		"/posts",
-		false,
+		true,
 		AddPost,
 	},
 
@@ -76,7 +115,7 @@ var routes = Routes{
 		"DeletePost",
 		[]string{strings.ToUpper("Delete")},
 		"/posts/{postId}",
-		false,
+		true,
 		DeletePost,
 	},
 
@@ -100,7 +139,7 @@ var routes = Routes{
 		"UpdatePost",
 		[]string{strings.ToUpper("Patch")},
 		"/posts/{postId}",
-		false,
+		true,
 		UpdatePost,
 	},
 }

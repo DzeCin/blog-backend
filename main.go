@@ -29,10 +29,12 @@ import (
 
 func main() {
 	var (
-		username     string
-		password     string
-		databaseHost string
-		databaseName string
+		username      string
+		password      string
+		databaseHost  string
+		databaseName  string
+		oauthProvider string
+		oidcClientID  string
 	)
 
 	if len(os.Getenv("DEV")) != 0 {
@@ -46,10 +48,14 @@ func main() {
 	password = os.Getenv("DB_PASSWORD")
 	databaseHost = os.Getenv("DB_HOST")
 	databaseName = os.Getenv("DB_NAME")
+	oauthProvider = os.Getenv("OAUTH_PROVIDER")
+	oidcClientID = os.Getenv("OIDC_CLIENT_ID")
 
 	log.Printf("Server started")
 
 	DBkey := "db"
+	OAuthProviderKey := "oauthProvider"
+	ClientIDOIDC := "clientIDOIDC"
 
 	// create db client
 
@@ -60,6 +66,8 @@ func main() {
 	ctx = context.Background()
 
 	ctx = context.WithValue(ctx, DBkey, client)
+	ctx = context.WithValue(ctx, OAuthProviderKey, oauthProvider)
+	ctx = context.WithValue(ctx, ClientIDOIDC, oidcClientID)
 
 	router := sw.NewRouter(&ctx)
 

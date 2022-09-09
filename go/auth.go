@@ -2,70 +2,43 @@ package blog
 
 import (
 	"context"
+	"fmt"
 	"github.com/coreos/go-oidc/v3/oidc"
-	"golang.org/x/oauth2"
+	"os"
+	"strings"
 )
 
 type Claims struct {
-	Email    string `json:"email"`
-	Verified bool   `json:"email_verified"`
+	Name  string   `json:"name"`
+	Roles []string `json:"roles"`
 }
 
-func NewOAuthConfig(oidcUrl string, scopes []string, clientID string, clientSecret string, redirectURL string) (*oauth2.Config, *oidc.Provider) {
+func GetUserClaims(token string) *Claims {
 
-	scopes = append(scopes, oidc.ScopeOpenID)
-
-	provider, err := oidc.NewProvider(context.Background(), oidcUrl)
-
-	if err != nil {
-		panic(err)
-	}
-
-	// Configure an OpenID Connect aware OAuth2 client.
-	oauth2Config := &oauth2.Config{
-		ClientID:     clientID,
-		ClientSecret: clientSecret,
-		RedirectURL:  redirectURL,
-
-		// Discovery returns the OAuth2 endpoints.
-		Endpoint: provider.Endpoint(),
-
-		// "openid" is a required scope for OpenID Connect flows.
-		Scopes: scopes,
-	}
-
-	return oauth2Config, provider
-}
-
-func GetClaims(oauth2Config *oauth2.Config, token string, provider oidc.Provider) Claims {
-
-	verifier := provider.Verifier(&oidc.Config{ClientID: oauth2Config.ClientID})
-
-	oauth2Token, err := (*oauth2Config).Exchange(context.Background(), token)
-
-	if err != nil {
-		// handle error
-	}
-
-	// Extract the ID Token from OAuth2 token.
-	rawIDToken, ok := oauth2Token.Extra("id_token").(string)
-	if !ok {
-		// handle missing token
-	}
-
-	// Parse and verify ID Token payload.
-	idToken, err := verifier.Verify(context.Background(), rawIDToken)
-	if err != nil {
-		// handle error
-	}
-
-	// Extract custom claims
 	var claims Claims
 
-	if err := idToken.Claims(&claims); err != nil {
+	provider, err := oidc.NewProvider(context.Background(), "")
+	if err != nil {
 		// handle error
 	}
 
-	return claims
+	var verifier = provider.Verifier(&oidc.Config{ClientID: ""})
+
+	// Remove "Bearer " in front of the token and verify the token
+	fmt.Println(strings.Split(token, "Bearer ")[1])
+	idToken, err := verifier.Verify(context.Background(), strings.Split(token, "Bearer ")[1])
+
+	if err != nil {
+		fmt.Println(err)
+		return &claims
+	}
+
+	if err := idToken.Claims(&claims); err != nil {
+		os.Exit(1)
+	}
+
+	fmt.Println(claims.Name)
+
+	return &claims
 
 }
