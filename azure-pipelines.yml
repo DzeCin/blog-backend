@@ -1,0 +1,31 @@
+# Go
+
+trigger:
+- dev
+- main
+- azure-pipelines-setup
+
+pool:
+  vmImage: ubuntu-latest
+
+
+steps:
+- task: GoTool@0
+  inputs:
+    version: '1.18'
+  displayName: 'Install golang'
+
+
+- task: Go@0
+  inputs:
+    command: 'test'
+    workingDirectory: '$(System.DefaultWorkingDirectory)/tests'
+  env:
+    DB_HOST: $(DB_HOST)
+    DB_USERNAME: $(DB_USERNAME)
+    DB_PASSWORD: $(DB_PASSWORD)
+    DB_NAME: $(DB_NAME)
+    OIDC_CLIENT_ID: $(OIDC_CLIENT_ID)
+    OAUTH_PROVIDER: $(OAUTH_PROVIDER)
+
+  displayName: 'Testing the app'

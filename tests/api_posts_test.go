@@ -81,7 +81,7 @@ func TestMain(m *testing.M) {
 	err := godotenv.Load(".test.env")
 
 	if err != nil {
-		log.Fatal("Error loading .env file")
+		log.Println("Not env file found, proceeding ...")
 	}
 
 	username = os.Getenv("DB_USERNAME")
