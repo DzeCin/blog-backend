@@ -25,5 +25,7 @@ steps:
     DB_USERNAME: $(DB_USERNAME)
     DB_PASSWORD: $(DB_PASSWORD)
     DB_NAME: $(DB_NAME)
+    OIDC_CLIENT_ID: $(OIDC_CLIENT_ID)
+    OAUTH_PROVIDER: $(OAUTH_PROVIDER)
 
   displayName: 'Testing the app'
