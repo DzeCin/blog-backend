@@ -70,10 +70,12 @@ func TestMain(m *testing.M) {
 	log.Printf("Setting testing context")
 
 	var (
-		username     string
-		password     string
-		databaseHost string
-		databaseName string
+		username      string
+		password      string
+		databaseHost  string
+		databaseName  string
+		oauthProvider string
+		oidcClientID  string
 	)
 
 	err := godotenv.Load(".test.env")
@@ -86,8 +88,12 @@ func TestMain(m *testing.M) {
 	password = os.Getenv("DB_PASSWORD")
 	databaseHost = os.Getenv("DB_HOST")
 	databaseName = os.Getenv("DB_NAME")
+	oauthProvider = os.Getenv("OAUTH_PROVIDER")
+	oidcClientID = os.Getenv("OIDC_CLIENT_ID")
 
-	key := "db"
+	DBkey := "db"
+	OAuthProviderKey := "oauthProvider"
+	ClientIDOIDC := "clientIDOIDC"
 
 	// create db client
 
@@ -99,11 +105,13 @@ func TestMain(m *testing.M) {
 
 	ctx = context.Background()
 
-	ctx = context.WithValue(ctx, key, client)
+	ctx = context.WithValue(ctx, DBkey, client)
+	ctx = context.WithValue(ctx, OAuthProviderKey, oauthProvider)
+	ctx = context.WithValue(ctx, ClientIDOIDC, oidcClientID)
 
 	code := m.Run()
 
-	//client.Collection("posts").DeleteMany(context.Background(), bson.D{{}})
+	client.Collection("posts").DeleteMany(context.Background(), bson.D{{}})
 
 	os.Exit(code)
 

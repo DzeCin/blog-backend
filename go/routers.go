@@ -11,7 +11,6 @@ package blog
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"strings"
 
@@ -52,12 +51,14 @@ func HandleAuthorization(handler ctxHandler, ctx *context.Context) func(w http.R
 		var claims *Claims
 		var isAllowed bool
 
-		claims = GetUserClaims(r.Header.Get("Authorization"))
+		providerURL := (*ctx).Value("oauthProvider").(string)
+		clientID := (*ctx).Value("clientIDOIDC").(string)
+
+		claims = GetUserClaims(r.Header.Get("Authorization"), providerURL, clientID)
 
 		for _, elmt := range (*claims).Roles {
 			if elmt == "0362b96d-a505-4462-a040-2b7ca87c6f81" {
 				isAllowed = true
-				fmt.Println("IsAllowed")
 			}
 		}
 
