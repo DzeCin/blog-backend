@@ -5,7 +5,9 @@ go 1.18
 require (
 	github.com/coreos/go-oidc/v3 v3.3.0
 	github.com/ddosify/go-faker v0.1.1
+	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
+	github.com/grokify/html-strip-tags-go v0.0.1
 	github.com/joho/godotenv v1.4.0
 	go.mongodb.org/mongo-driver v1.10.1
 	golang.org/x/oauth2 v0.0.0-20220822191816-0ebed06d0094
@@ -14,7 +16,6 @@ require (
 require (
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/golang/snappy v0.0.3 // indirect
-	github.com/google/uuid v1.3.0 // indirect
 	github.com/jaswdr/faker v1.10.2 // indirect
 	github.com/klauspost/compress v1.13.6 // indirect
 	github.com/montanaflynn/stats v0.0.0-20171201202039-1bf9dbcd8cbe // indirect

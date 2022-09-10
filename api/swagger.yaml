@@ -9,7 +9,10 @@ info:
     url: http://www.apache.org/licenses/LICENSE-2.0.html
   version: 1.0.0
 servers:
-  - url: /
+  - url: "{server}"
+    variables:
+      server:
+        default: https://blog-api.cindrak.com
 tags:
   - name: posts
     description: everything related to posts
@@ -63,13 +66,17 @@ paths:
               $ref: '#/components/schemas/Post'
       responses:
         "201":
-          description: post created
+          description: Post created
         "400":
-          description: "invalid input, object invalid"
+          description: Bad request
         "409":
-          description: an existing post already exists
+          description: An existing post already exists
       security:
-        - BearerAuth: []
+        - oAuth:
+            - openid
+            - profile
+            - email
+            - offline_access
   /posts/{postId}:
     get:
       tags:
@@ -111,8 +118,16 @@ paths:
       responses:
         "200":
           description: Post deleted
+        "400":
+          description: Bad request
         "404":
           description: Post does not exist
+      security:
+        - oAuth:
+            - openid
+            - profile
+            - email
+            - offline_access
     patch:
       tags:
         - posts
@@ -128,7 +143,7 @@ paths:
           schema:
             type: string
       requestBody:
-        description: Post to modify in json format
+        description: Post to modify in
         content:
           application/json:
             schema:
@@ -136,8 +151,16 @@ paths:
       responses:
         "200":
           description: Post deleted
+        "400":
+          description: Bad request
         "404":
           description: Post does not exist
+      security:
+        - oAuth:
+            - openid
+            - profile
+            - email
+            - offline_access
 components:
   schemas:
     Post:
@@ -149,12 +172,16 @@ components:
         - header
         - id
         - tags
+        - title
       type: object
       properties:
         id:
           type: string
           format: uuid
           example: d290f1ee-6c54-4b01-90e6-d701748f0851
+        title:
+          type: string
+          example: How to setup kubernetes
         tags:
           maxItems: 10
           minItems: 1
@@ -186,12 +213,21 @@ components:
         author: Dzenan Cindrak
         header: How to create a VM on Azure
         id: d290f1ee-6c54-4b01-90e6-d701748f0851
+        title: How to setup kubernetes
         content: Lorem ipsum
         tags:
           - devops
           - kubernetes
         dateUpdated: 2016-08-29T09:12:33.001Z
   securitySchemes:
-    BearerAuth:
-      type: http
-      scheme: bearer
+    oAuth:
+      type: oauth2
+      description: This API uses OAuth 2 with the implicit grant flow.
+      flows:
+        implicit:
+          authorizationUrl: https://api.example.com/oauth2/authorize
+          scopes:
+            openid: openid required scope
+            profile: acess to basic user info
+            email: access to user email
+            offline_access: offline access to data

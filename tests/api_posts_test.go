@@ -1,11 +1,11 @@
-package blogBackendTests
+package BlogBackendTests
 
 import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"github.com/DzeCin/blog-backend/faker"
 	sw "github.com/DzeCin/blog-backend/go"
-	faker2 "github.com/ddosify/go-faker/faker"
 	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/bson"
 	"log"
@@ -15,7 +15,7 @@ import (
 	"testing"
 )
 
-const nbPosts = 1500
+const nbPosts = 10
 
 var (
 	ctx context.Context
@@ -23,6 +23,7 @@ var (
 
 var newPost = sw.Post{
 	Id:          "5066a748-9a72-404d-94f7-512c0779ff8e",
+	Title:       "How to setup",
 	Tags:        []string{"devops", "python", "golang"},
 	Header:      "This is a blog about",
 	Content:     "Does it work ?",
@@ -33,6 +34,7 @@ var newPost = sw.Post{
 
 var newBadPost = sw.Post{
 	Id:          "badUID",
+	Title:       "How to setup",
 	Tags:        []string{"devops", "python", "golang"},
 	Header:      "This is a blog about",
 	Content:     "Does it work ?",
@@ -43,6 +45,7 @@ var newBadPost = sw.Post{
 
 var updatedPost = sw.Post{
 	Id:          newPost.Id,
+	Title:       "How to setup",
 	Tags:        []string{"tag3", "tag4"},
 	Header:      "Edited header",
 	Content:     "Edited content",
@@ -53,42 +56,13 @@ var updatedPost = sw.Post{
 
 var updatedBadPost = sw.Post{
 	Id:          newPost.Id,
+	Title:       "How to setup",
 	Tags:        []string{"tag3", "tag4"},
 	Header:      "",
 	Content:     "Edited content",
 	Author:      "Edited author",
 	DateCreated: newPost.DateCreated,
 	DateUpdated: "2023-05-31T22:58:40.653Z",
-}
-
-func postGenerator(number int) []interface{} {
-	faker := faker2.NewFaker()
-
-	var posts []interface{}
-
-	for i := 0; i < number; i++ {
-
-		var post = sw.Post{
-			Id:          faker.RandomUUID().String(),
-			Tags:        []string{faker.RandomCatchPhraseAdjective(), faker.RandomCatchPhraseAdjective(), faker.RandomCatchPhraseAdjective()},
-			Header:      faker.RandomLoremSentence(),
-			Content:     faker.RandomLoremText(),
-			Author:      faker.RandomPersonFullName(),
-			DateCreated: faker.RandomDatePast(),
-			DateUpdated: faker.RandomDateFuture(),
-		}
-
-		toBson, err := bson.Marshal(post)
-		if err != nil {
-			panic(err)
-		}
-
-		posts = append(posts, toBson)
-
-	}
-
-	return posts
-
 }
 
 func TestMain(m *testing.M) {
@@ -121,7 +95,7 @@ func TestMain(m *testing.M) {
 
 	client.Collection("posts").DeleteMany(context.Background(), bson.D{{}})
 
-	_, err = client.Collection("posts").InsertMany(context.Background(), postGenerator(nbPosts))
+	_, err = client.Collection("posts").InsertMany(context.Background(), BlogBackendFaker.PostGenerator(nbPosts))
 
 	ctx = context.Background()
 
@@ -129,7 +103,7 @@ func TestMain(m *testing.M) {
 
 	code := m.Run()
 
-	client.Collection("posts").DeleteMany(context.Background(), bson.D{{}})
+	//client.Collection("posts").DeleteMany(context.Background(), bson.D{{}})
 
 	os.Exit(code)
 
@@ -206,6 +180,36 @@ func TestAddPostHandlerPostNotExists(t *testing.T) {
 	handler.ServeHTTP(rr, req)
 
 	if status := rr.Code; status != http.StatusOK {
+		t.Errorf("handler returned wrong status code: got %v want %v",
+			status, http.StatusOK)
+	}
+
+}
+
+// Test with no auth token
+
+func TestAddPostHandlerPostUnauthorizedNoAuthToken(t *testing.T) {
+
+	rawData, err := json.Marshal(newPost)
+
+	if err != nil {
+		panic(err)
+	}
+
+	body := bytes.NewReader(rawData)
+
+	req, err := http.NewRequest("POST", "posts", body)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	rr := httptest.NewRecorder()
+
+	handler := http.HandlerFunc(sw.HandleAuthorization(sw.AddPost, &ctx))
+
+	handler.ServeHTTP(rr, req)
+
+	if status := rr.Code; status != http.StatusUnauthorized {
 		t.Errorf("handler returned wrong status code: got %v want %v",
 			status, http.StatusOK)
 	}

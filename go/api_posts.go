@@ -23,10 +23,19 @@ import (
 	"log"
 	"net/http"
 	"path"
+	"strings"
 	"time"
 )
 
 const CollectionName = "posts"
+
+//func corsHeaders(w *http.ResponseWriter) {
+//
+//	(*w).Header().Set("Access-Control-Allow-Origin", "*")
+//	(*w).Header().Set("Access-Control-Allow-Headers", "*")
+//	(*w).Header().Set("Access-Control-Allow-Methods", "*")
+//
+//}
 
 func AddPost(w http.ResponseWriter, r *http.Request, ctx *context.Context) {
 
@@ -39,11 +48,11 @@ func AddPost(w http.ResponseWriter, r *http.Request, ctx *context.Context) {
 	b, err := ioutil.ReadAll(r.Body)
 
 	if err != nil {
-		panic(err)
+		w.WriteHeader(http.StatusBadRequest)
 	}
 
 	if err = json.Unmarshal(b, &newPost); err != nil {
-		panic(err)
+		w.WriteHeader(http.StatusBadRequest)
 	}
 
 	newPost.DateCreated = time.Now().String()
@@ -59,7 +68,7 @@ func AddPost(w http.ResponseWriter, r *http.Request, ctx *context.Context) {
 		if mongo.IsDuplicateKeyError(err) {
 			w.WriteHeader(http.StatusConflict)
 		} else if err != nil {
-			panic(err)
+			w.WriteHeader(http.StatusBadRequest)
 		} else {
 			w.WriteHeader(http.StatusOK)
 		}
@@ -67,10 +76,11 @@ func AddPost(w http.ResponseWriter, r *http.Request, ctx *context.Context) {
 }
 
 func DeletePost(w http.ResponseWriter, r *http.Request, ctx *context.Context) {
+
 	db := (*ctx).Value("db").(*mongo.Database)
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	id := path.Base(r.URL.Path)
 
 	deletedCount, err := db.Collection(CollectionName).DeleteOne(context.Background(), bson.D{primitive.E{Key: "_id", Value: id}})
@@ -78,8 +88,6 @@ func DeletePost(w http.ResponseWriter, r *http.Request, ctx *context.Context) {
 	if err != nil {
 
 		w.WriteHeader(http.StatusInternalServerError)
-
-		panic(err)
 
 	} else if deletedCount.DeletedCount == 0 {
 
@@ -93,93 +101,115 @@ func DeletePost(w http.ResponseWriter, r *http.Request, ctx *context.Context) {
 
 func GetPost(w http.ResponseWriter, r *http.Request, ctx *context.Context) {
 
-	var resPost Post
+	switch r.Method {
 
-	db := (*ctx).Value("db").(*mongo.Database)
+	case http.MethodOptions:
 
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.WriteHeader(http.StatusOK)
 
-	id := path.Base(r.RequestURI)
+	case http.MethodGet:
 
-	err := db.Collection(CollectionName).FindOne(context.Background(), bson.D{primitive.E{Key: "_id", Value: id}}).Decode(&resPost)
+		var resPost Post
+		db := (*ctx).Value("db").(*mongo.Database)
 
-	if err == mongo.ErrNoDocuments {
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		id := path.Base(r.RequestURI)
 
-		w.WriteHeader(http.StatusNotFound)
+		err := db.Collection(CollectionName).FindOne(context.Background(), bson.D{primitive.E{Key: "_id", Value: id}}).Decode(&resPost)
 
-	} else if err != nil {
+		if err == mongo.ErrNoDocuments {
 
-		w.WriteHeader(http.StatusInternalServerError)
+			w.WriteHeader(http.StatusNotFound)
 
-		panic(err)
+		} else if err != nil {
 
-	} else {
-
-		data, err := json.Marshal(resPost)
-
-		if err != nil {
-
-			panic(err)
-
-		}
-
-		write, err := w.Write(data)
-
-		if err != nil {
-
-			fmt.Println(write)
+			w.WriteHeader(http.StatusInternalServerError)
 
 			panic(err)
 
-		}
+		} else {
 
+			data, err := json.Marshal(resPost)
+
+			if err != nil {
+
+				panic(err)
+
+			}
+
+			write, err := w.Write(data)
+
+			if err != nil {
+
+				fmt.Println(write)
+
+				panic(err)
+
+			}
+
+		}
 	}
 
 }
 
 func GetPosts(w http.ResponseWriter, r *http.Request, ctx *context.Context) {
 
-	var posts []Post
+	switch r.Method {
 
-	db := (*ctx).Value("db").(*mongo.Database)
+	case http.MethodOptions:
 
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.WriteHeader(http.StatusOK)
 
-	opts := options.Find().SetSort(bson.D{primitive.E{Key: "dateUpdated", Value: 1}})
+	case http.MethodGet:
 
-	cur, err := db.Collection(CollectionName).Find(context.Background(), bson.D{{}}, opts)
+		if r.Method == strings.ToUpper("Options") {
 
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		log.Fatal(err)
-	}
+		} else {
 
-	for cur.Next(context.TODO()) {
-		var post Post
-		err := cur.Decode(&post)
-		if err != nil {
-			log.Fatal(err)
+			var posts []Post
+
+			db := (*ctx).Value("db").(*mongo.Database)
+
+			w.Header().Add("Content-Type", "application/json; charset=UTF-8")
+
+			opts := options.Find().SetSort(bson.D{primitive.E{Key: "dateUpdated", Value: 1}})
+
+			cur, err := db.Collection(CollectionName).Find(context.Background(), bson.D{{}}, opts)
+
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				log.Fatal(err)
+			}
+
+			for cur.Next(context.TODO()) {
+				var post Post
+				err := cur.Decode(&post)
+				if err != nil {
+					log.Fatal(err)
+				}
+				posts = append(posts, post)
+
+			}
+
+			data, err := json.Marshal(posts)
+
+			if err != nil {
+				panic(err)
+			}
+
+			w.WriteHeader(http.StatusOK)
+
+			write, err := w.Write(data)
+
+			if err != nil {
+				fmt.Println(write)
+				panic(err)
+
+			}
 		}
-		posts = append(posts, post)
 
 	}
-
-	data, err := json.Marshal(posts)
-
-	if err != nil {
-		panic(err)
-	}
-
-	w.WriteHeader(http.StatusOK)
-
-	write, err := w.Write(data)
-
-	if err != nil {
-		fmt.Println(write)
-		panic(err)
-
-	}
-
 }
 
 func UpdatePost(w http.ResponseWriter, r *http.Request, ctx *context.Context) {
