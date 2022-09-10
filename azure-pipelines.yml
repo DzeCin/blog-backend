@@ -15,8 +15,15 @@ steps:
     version: '1.18'
   displayName: 'Install golang'
 
+
 - task: Go@0
   inputs:
     command: 'test'
     workingDirectory: '$(System.DefaultWorkingDirectory)/tests'
+  env:
+    DB_HOST: $(DB_HOST)
+    DB_USERNAME: $(DB_USERNAME)
+    DB_PASSWORD: $(DB_PASSWORD)
+    DB_NAME: $(DB_NAME)
+
   displayName: 'Testing the app'
