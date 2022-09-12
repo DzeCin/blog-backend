@@ -28,8 +28,8 @@ var newPost = sw.Post{
 	Header:      "This is a blog about",
 	Content:     "Does it work ?",
 	Author:      "Dzenan",
-	DateCreated: "2022-05-31T22:58:40.653Z",
-	DateUpdated: "2022-05-31T22:58:40.653Z",
+	DateCreated: "2022-05-31",
+	DateUpdated: "2022-05-31",
 }
 
 var newBadPost = sw.Post{
@@ -39,8 +39,8 @@ var newBadPost = sw.Post{
 	Header:      "This is a blog about",
 	Content:     "Does it work ?",
 	Author:      "Dzenan",
-	DateCreated: "2022-05-31T22:58:40.653Z",
-	DateUpdated: "2022-05-31T22:58:40.653Z",
+	DateCreated: "2022-05-31",
+	DateUpdated: "2022-05-31",
 }
 
 var updatedPost = sw.Post{
@@ -51,9 +51,10 @@ var updatedPost = sw.Post{
 	Content:     "Edited content",
 	Author:      "Edited author",
 	DateCreated: newPost.DateCreated,
-	DateUpdated: "2023-05-31T22:58:40.653Z",
+	DateUpdated: "2023-05-31",
 }
 
+// No header ==> should be refused
 var updatedBadPost = sw.Post{
 	Id:          newPost.Id,
 	Title:       "How to setup",
@@ -62,7 +63,7 @@ var updatedBadPost = sw.Post{
 	Content:     "Edited content",
 	Author:      "Edited author",
 	DateCreated: newPost.DateCreated,
-	DateUpdated: "2023-05-31T22:58:40.653Z",
+	DateUpdated: "2023-05-31",
 }
 
 func TestMain(m *testing.M) {
@@ -76,6 +77,7 @@ func TestMain(m *testing.M) {
 		databaseName  string
 		oauthProvider string
 		oidcClientID  string
+		oidcRoleAdmin string
 	)
 
 	err := godotenv.Load(".test.env")
@@ -90,10 +92,13 @@ func TestMain(m *testing.M) {
 	databaseName = os.Getenv("DB_NAME")
 	oauthProvider = os.Getenv("OAUTH_PROVIDER")
 	oidcClientID = os.Getenv("OIDC_CLIENT_ID")
+	oidcRoleAdmin = os.Getenv("OIDC_ROLE_ADMIN")
+
 
 	DBkey := "db"
 	OAuthProviderKey := "oauthProvider"
 	ClientIDOIDC := "clientIDOIDC"
+	oidcRoleAdminKey := "oidcRoleAdminKey"
 
 	// create db client
 
@@ -108,10 +113,11 @@ func TestMain(m *testing.M) {
 	ctx = context.WithValue(ctx, DBkey, client)
 	ctx = context.WithValue(ctx, OAuthProviderKey, oauthProvider)
 	ctx = context.WithValue(ctx, ClientIDOIDC, oidcClientID)
-
+	ctx = context.WithValue(ctx, oidcRoleAdminKey, oidcRoleAdmin)
+	
 	code := m.Run()
 
-	client.Collection("posts").DeleteMany(context.Background(), bson.D{{}})
+//	client.Collection("posts").DeleteMany(context.Background(), bson.D{{}})
 
 	os.Exit(code)
 
@@ -318,7 +324,7 @@ func TestUpdatePostHandlerBadPostExists(t *testing.T) {
 
 	body := bytes.NewReader(rawData)
 
-	req, err := http.NewRequest("PATCH", "posts/"+updatedBadPost.Id, body)
+	req, err := http.NewRequest("PATCH", "posts/" + updatedBadPost.Id, body)
 
 	if err != nil {
 		t.Fatal(err)

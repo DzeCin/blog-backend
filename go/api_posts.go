@@ -14,11 +14,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"github.com/gookit/validate"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -29,13 +29,6 @@ import (
 
 const CollectionName = "posts"
 
-//func corsHeaders(w *http.ResponseWriter) {
-//
-//	(*w).Header().Set("Access-Control-Allow-Origin", "*")
-//	(*w).Header().Set("Access-Control-Allow-Headers", "*")
-//	(*w).Header().Set("Access-Control-Allow-Methods", "*")
-//
-//}
 
 func AddPost(w http.ResponseWriter, r *http.Request, ctx *context.Context) {
 
@@ -55,14 +48,14 @@ func AddPost(w http.ResponseWriter, r *http.Request, ctx *context.Context) {
 		w.WriteHeader(http.StatusBadRequest)
 	}
 
-	newPost.DateCreated = time.Now().String()
+	newPost.DateCreated = time.Now().Format("2006-01-02")
 
-	newPost.DateUpdated = time.Now().String()
+	newPost.DateUpdated = time.Now().Format("2006-01-02")
 
-	if _, err := uuid.Parse(newPost.Id); err != nil || newPost.Id == "" || newPost.Tags == nil || newPost.Header == "" || newPost.Content == "" || newPost.Author == "" {
-		w.WriteHeader(http.StatusBadRequest)
+	v := validate.Struct(newPost)
 
-	} else {
+	if v.Validate() {
+
 		_, err = db.Collection(CollectionName).InsertOne(context.Background(), newPost)
 
 		if mongo.IsDuplicateKeyError(err) {
@@ -72,6 +65,9 @@ func AddPost(w http.ResponseWriter, r *http.Request, ctx *context.Context) {
 		} else {
 			w.WriteHeader(http.StatusOK)
 		}
+
+	} else {
+		w.WriteHeader(http.StatusBadRequest)
 	}
 }
 
@@ -80,7 +76,7 @@ func DeletePost(w http.ResponseWriter, r *http.Request, ctx *context.Context) {
 	db := (*ctx).Value("db").(*mongo.Database)
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	w.Header().Set("Access-Control-Allow-Origin", "*")
+	
 	id := path.Base(r.URL.Path)
 
 	deletedCount, err := db.Collection(CollectionName).DeleteOne(context.Background(), bson.D{primitive.E{Key: "_id", Value: id}})
@@ -113,7 +109,7 @@ func GetPost(w http.ResponseWriter, r *http.Request, ctx *context.Context) {
 		db := (*ctx).Value("db").(*mongo.Database)
 
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		w.Header().Set("Access-Control-Allow-Origin", "*")
+
 		id := path.Base(r.RequestURI)
 
 		err := db.Collection(CollectionName).FindOne(context.Background(), bson.D{primitive.E{Key: "_id", Value: id}}).Decode(&resPost)
@@ -178,8 +174,7 @@ func GetPosts(w http.ResponseWriter, r *http.Request, ctx *context.Context) {
 			cur, err := db.Collection(CollectionName).Find(context.Background(), bson.D{{}}, opts)
 
 			if err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-				log.Fatal(err)
+				w.WriteHeader(http.StatusBadRequest)
 			}
 
 			for cur.Next(context.TODO()) {
@@ -230,10 +225,12 @@ func UpdatePost(w http.ResponseWriter, r *http.Request, ctx *context.Context) {
 		panic(err)
 	}
 
-	if _, err := uuid.Parse(newPost.Id); err != nil || newPost.Id == "" || newPost.Tags == nil || newPost.Header == "" || newPost.Content == "" || newPost.Author == "" || newPost.Id != path.Base(r.URL.Path) {
-		w.WriteHeader(http.StatusBadRequest)
-	} else {
-		newPost.DateUpdated = time.Now().String()
+	v := validate.Struct(newPost)
+
+	if v.Validate(){
+
+		newPost.DateUpdated = time.Now().Format("2006-01-02")
+
 		updateCount, err := db.Collection(CollectionName).UpdateOne(context.Background(), bson.D{primitive.E{Key: "_id", Value: newPost.Id}}, bson.M{"$set": newPost})
 		if err != nil {
 			log.Fatal(err)
@@ -242,5 +239,8 @@ func UpdatePost(w http.ResponseWriter, r *http.Request, ctx *context.Context) {
 		} else {
 			w.WriteHeader(http.StatusOK)
 		}
+	} else{
+		w.WriteHeader(http.StatusBadRequest)
 	}
+
 }

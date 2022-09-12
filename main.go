@@ -35,6 +35,7 @@ func main() {
 		databaseName  string
 		oauthProvider string
 		oidcClientID  string
+		oidcRoleAdmin string
 	)
 
 	if len(os.Getenv("DEV")) != 0 {
@@ -50,12 +51,14 @@ func main() {
 	databaseName = os.Getenv("DB_NAME")
 	oauthProvider = os.Getenv("OAUTH_PROVIDER")
 	oidcClientID = os.Getenv("OIDC_CLIENT_ID")
+	oidcRoleAdmin = os.Getenv("OIDC_ROLE_ADMIN")
 
 	log.Printf("Server started")
 
 	DBkey := "db"
 	OAuthProviderKey := "oauthProvider"
 	ClientIDOIDC := "clientIDOIDC"
+	oidcRoleAdminKey := "oidcRoleAdminKey"
 
 	// create db client
 
@@ -68,6 +71,7 @@ func main() {
 	ctx = context.WithValue(ctx, DBkey, client)
 	ctx = context.WithValue(ctx, OAuthProviderKey, oauthProvider)
 	ctx = context.WithValue(ctx, ClientIDOIDC, oidcClientID)
+	ctx = context.WithValue(ctx, oidcRoleAdminKey, oidcRoleAdmin)
 
 	router := sw.NewRouter(&ctx)
 

@@ -11,19 +11,19 @@
 package blog
 
 type Post struct {
-	Id string `json:"id" bson:"_id"`
+	Id string `json:"id" bson:"_id" validate:"required|uuid"`
 
-	Title string `json:"title" bson:"title"`
+	Title string `json:"title" bson:"title" validate:"required"`
 
 	Tags []string `json:"tags" bson:"tags"`
 
-	Header string `json:"header" bson:"header"`
+	Header string `json:"header" bson:"header" validate:"required"`
 
-	Content string `json:"content" bson:"content"`
+	Content string `json:"content" bson:"content" validate:"required"`
 
-	Author string `json:"author" bson:"author"`
+	Author string `json:"author" bson:"author" validate:"required"`
 
-	DateCreated string `json:"dateCreated" bson:"dateCreated"`
+	DateCreated string `json:"dateCreated" bson:"dateCreated" validate:"required"`
 
-	DateUpdated string `json:"dateUpdated" bson:"dateUpdated"`
+	DateUpdated string `json:"dateUpdated" bson:"dateUpdated" validate:"required"`
 }

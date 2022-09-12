@@ -21,6 +21,10 @@ This project has been made to provide a backend for blog websites. It is a moder
 
 - Full test coverage
 
+- Verify all input values
+
+- Add logging to stdout system with different logs level
+
 
 ## Environment Variables
 
@@ -36,7 +40,15 @@ If you want to develop, add variables in a .development.env file in the root fol
 
 `DB_NAME` the database name to use for the project.
 
-If you want to run it in production, pass those env variable without .env file.
+`OAUTH_PROVIDER` the OAUTH provider URL (ex.: https://login.microsoftonline.com/{tenant id}/v2.0 for Azure AD).
+
+`OIDC_CLIENT_ID` the oidc client id to use for authentication.
+
+`OIDC_ROLE_ADMIN` the admin role id to use (must be send in the role claim of the jwt).
+
+
+If you want to run it in production, pass those env variable without a .env file.
+
 ## Run Locally
 
 Clone the project
@@ -68,7 +80,11 @@ Start the docker container
 
 ## Running Tests
 
-To run tests, run the following command
+To run tests, run the following commands
+
+```bash
+  cp .development.env ./tests/.test.env
+```
 
 ```bash
   go test ./tests

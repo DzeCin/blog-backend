@@ -51,13 +51,15 @@ func HandleAuthorization(handler ctxHandler, ctx *context.Context) func(w http.R
 		var claims *Claims
 		var isAllowed bool
 
+		oidcRoleAdmin := (*ctx).Value("oidcRoleAdminKey").(string)
+
 		providerURL := (*ctx).Value("oauthProvider").(string)
 		clientID := (*ctx).Value("clientIDOIDC").(string)
 
 		claims = GetUserClaims(r.Header.Get("Authorization"), providerURL, clientID)
 
 		for _, elmt := range (*claims).Roles {
-			if elmt == "0362b96d-a505-4462-a040-2b7ca87c6f81" {
+			if elmt == oidcRoleAdmin {
 				isAllowed = true
 			}
 		}

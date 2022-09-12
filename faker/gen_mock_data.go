@@ -1,13 +1,15 @@
 package BlogBackendFaker
 
 import (
+	"io/ioutil"
+	"log"
+	"net/http"
+	"time"
+
 	sw "github.com/DzeCin/blog-backend/go"
 	faker2 "github.com/ddosify/go-faker/faker"
 	"github.com/grokify/html-strip-tags-go"
 	"go.mongodb.org/mongo-driver/bson"
-	"io/ioutil"
-	"log"
-	"net/http"
 )
 
 func PostGenerator(number int) []interface{} {
@@ -30,6 +32,9 @@ func PostGenerator(number int) []interface{} {
 
 		strippedHtml := strip.StripTags(string(body))
 
+		dateCreated := time.Unix(faker.CurrentTimestamp(), 0).Format("2006-01-02")
+		dateUpdated := time.Unix(faker.CurrentTimestamp() + 3600 * 24 * 50, 0).Format("2006-01-02")
+
 		var post = sw.Post{
 			Id:          faker.RandomUUID().String(),
 			Title:       faker.RandomJobTitle(),
@@ -37,8 +42,8 @@ func PostGenerator(number int) []interface{} {
 			Header:      faker.RandomLoremSentence(),
 			Content:     strippedHtml,
 			Author:      faker.RandomPersonFullName(),
-			DateCreated: faker.RandomDatePast(),
-			DateUpdated: faker.RandomDateFuture(),
+			DateCreated: dateCreated,
+			DateUpdated: dateUpdated,
 		}
 
 		toBson, err := bson.Marshal(post)
