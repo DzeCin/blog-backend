@@ -14,11 +14,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/google/uuid"
+	"github.com/gookit/validate"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"github.com/gookit/validate"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -28,7 +29,6 @@ import (
 )
 
 const CollectionName = "posts"
-
 
 func AddPost(w http.ResponseWriter, r *http.Request, ctx *context.Context) {
 
@@ -52,6 +52,8 @@ func AddPost(w http.ResponseWriter, r *http.Request, ctx *context.Context) {
 
 	newPost.DateUpdated = time.Now().Format("2006-01-02")
 
+	newPost.Id = uuid.New().String()
+
 	v := validate.Struct(newPost)
 
 	if v.Validate() {
@@ -63,7 +65,14 @@ func AddPost(w http.ResponseWriter, r *http.Request, ctx *context.Context) {
 		} else if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 		} else {
+			resp := make(map[string]string)
+			resp["id"] = newPost.Id
 			w.WriteHeader(http.StatusOK)
+			jsonId, err := json.Marshal(resp)
+			if err != nil {
+				return
+			}
+			w.Write(jsonId)
 		}
 
 	} else {
@@ -76,7 +85,7 @@ func DeletePost(w http.ResponseWriter, r *http.Request, ctx *context.Context) {
 	db := (*ctx).Value("db").(*mongo.Database)
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	
+
 	id := path.Base(r.URL.Path)
 
 	deletedCount, err := db.Collection(CollectionName).DeleteOne(context.Background(), bson.D{primitive.E{Key: "_id", Value: id}})
@@ -227,7 +236,7 @@ func UpdatePost(w http.ResponseWriter, r *http.Request, ctx *context.Context) {
 
 	v := validate.Struct(newPost)
 
-	if v.Validate(){
+	if v.Validate() {
 
 		newPost.DateUpdated = time.Now().Format("2006-01-02")
 
@@ -239,7 +248,7 @@ func UpdatePost(w http.ResponseWriter, r *http.Request, ctx *context.Context) {
 		} else {
 			w.WriteHeader(http.StatusOK)
 		}
-	} else{
+	} else {
 		w.WriteHeader(http.StatusBadRequest)
 	}
 

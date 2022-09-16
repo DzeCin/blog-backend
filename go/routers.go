@@ -11,6 +11,7 @@ package blog
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -65,6 +66,7 @@ func HandleAuthorization(handler ctxHandler, ctx *context.Context) func(w http.R
 		}
 
 		if isAllowed {
+			fmt.Println("Operation succeed for " + claims.Name)
 			handler(w, r, ctx)
 		} else {
 			w.WriteHeader(http.StatusUnauthorized)

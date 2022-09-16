@@ -19,15 +19,12 @@ func GetUserClaims(token string, providerURL string, clientID string) *Claims {
 	var claims Claims
 	var idToken *oidc.IDToken
 
-
 	provider, err := oidc.NewProvider(context.Background(), providerURL)
 	if err != nil {
 		return &claims
 	}
-	
-	verifier := provider.Verifier(&oidc.Config{ClientID: clientID})
-	
 
+	verifier := provider.Verifier(&oidc.Config{ClientID: clientID})
 
 	// Remove "Bearer " in front of the token and verify the token
 
@@ -41,7 +38,6 @@ func GetUserClaims(token string, providerURL string, clientID string) *Claims {
 		if err != nil {
 			claims.Roles = []string{""}
 			claims.Name = ""
-			fmt.Println(err)
 			return &claims
 		}
 	}
